@@ -197,9 +197,9 @@ dtype = to_torch_dtype(config.dtype)
 #device = torch.device("cuda")
 device = torch.device(devicetorch.get(torch))
 
-config.vae['device'] = device
+#config.vae['device'] = device
 config.text_encoder['device'] = device
-config.text_encoder['scheduler'] = device
+config.scheduler['device'] = device
 
 # build model
 vae, text_encoder, stdit, scheduler = build_models(
