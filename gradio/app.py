@@ -195,7 +195,7 @@ from opensora.utils.misc import to_torch_dtype
 dtype = to_torch_dtype(config.dtype)
 
 #device = torch.device("cuda")
-device = devicetorch.get(device)
+device = torch.device(devicetorch.get(torch))
 
 # build model
 vae, text_encoder, stdit, scheduler = build_models(
