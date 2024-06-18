@@ -19,7 +19,6 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint
-import xformers.ops
 from einops import rearrange
 from timm.models.vision_transformer import Mlp
 
@@ -30,6 +29,8 @@ import devicetorch
 approx_gelu = lambda: nn.GELU(approximate="tanh")
 
 device = devicetorch.get(torch)
+if device == "cuda":
+    import xformers.ops
 
 
 class LlamaRMSNorm(nn.Module):
