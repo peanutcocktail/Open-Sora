@@ -14,7 +14,7 @@ import subprocess
 import sys
 from tempfile import NamedTemporaryFile
 
-import spaces
+#import spaces
 import torch
 
 import gradio as gr
@@ -399,7 +399,7 @@ def run_inference(
             return saved_path
 
 
-@spaces.GPU(duration=200)
+#@spaces.GPU(duration=200)
 def run_image_inference(
     prompt_text,
     resolution,
@@ -439,7 +439,7 @@ def run_image_inference(
     )
 
 
-@spaces.GPU(duration=200)
+#@spaces.GPU(duration=200)
 def run_video_inference(
     prompt_text,
     resolution,
