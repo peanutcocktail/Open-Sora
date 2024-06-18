@@ -199,7 +199,6 @@ device = torch.device(devicetorch.get(torch))
 
 #config.vae['device'] = device
 config.text_encoder['device'] = device
-config.scheduler['device'] = device
 
 # build model
 vae, text_encoder, stdit, scheduler = build_models(
