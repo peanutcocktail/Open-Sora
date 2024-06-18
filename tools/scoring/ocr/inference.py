@@ -17,6 +17,7 @@ from torchvision.transforms import CenterCrop, Compose, Resize
 from tqdm import tqdm
 
 from tools.datasets.utils import extract_frames, is_video
+import devicetorch
 
 
 def merge_scores(gathered_list: list, meta: pd.DataFrame):
@@ -103,7 +104,8 @@ def main():
     cfg = Config.fromfile("./tools/scoring/ocr/dbnetpp.py")
     colossalai.launch_from_torch({})
 
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    #device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device = devicetorch.get(torch)
     DefaultScope.get_instance("ocr", scope_name="mmocr")  # use mmocr Registry as default
 
     # build model

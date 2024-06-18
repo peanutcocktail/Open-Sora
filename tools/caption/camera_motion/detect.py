@@ -4,12 +4,15 @@ import argparse
 from typing import List
 
 import pandas as pd
+import devicetorch
+import torch
 
 from .camera_motion import compute_camera_motion
 
 
 def process(paths: List[str], threshold: float) -> List[str]:
-    device = "cuda"
+    device = devicetorch.get(torch)
+    #device = "cuda"
     submodules = {"repo": "facebookresearch/co-tracker", "model": "cotracker2"}
     camera_motion_types = compute_camera_motion(device, submodules, paths, factor=threshold)
     return camera_motion_types

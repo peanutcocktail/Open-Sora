@@ -13,6 +13,7 @@ from torchvision.datasets.folder import pil_loader
 from tqdm import tqdm
 
 from tools.datasets.utils import extract_frames, is_video
+import devicetorch
 
 
 def merge_scores(gathered_list: list, meta: pd.DataFrame, column):
@@ -88,7 +89,8 @@ def main():
     colossalai.launch_from_torch({})
 
     # build model
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    #device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device = devicetorch.get(torch)
     model, preprocess = clip.load("ViT-L/14", device=device)
     logit_scale = model.logit_scale.exp().item()
 

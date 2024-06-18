@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 from imageio import imread, imwrite
 from PIL import ImageFile
+import devicetorch
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -94,7 +95,8 @@ def seed_all(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    devicetorch.manual_seed_all(torch, seed)
+    #torch.cuda.manual_seed_all(seed)
 
 
 def read(file):

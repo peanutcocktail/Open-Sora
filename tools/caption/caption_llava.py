@@ -21,8 +21,11 @@ from ..datasets.utils import IMG_EXTENSIONS, VID_EXTENSIONS
 from .acceleration.llava.policies import LlavaLlamaForCausalLMPolicy, LlavaMistralForCausalLMPolicy
 from .utils import PROMPTS, Timer, VideoTextDataset, collate_fn
 
+import devicetorch
+
 disable_torch_init()
 
+device = devicetorch.get(torch)
 
 class NoPaddingDistributedSampler(DistributedSampler):
     def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, seed=0, drop_last=False):
@@ -63,7 +66,9 @@ def main(args):
     # ======================================================
     # we set a very large timeout to avoid some processes exit early
     dist.init_process_group(backend="nccl", timeout=timedelta(hours=24))
-    torch.cuda.set_device(dist.get_rank() % torch.cuda.device_count())
+    #torch.cuda.set_device(dist.get_rank() % torch.cuda.device_count())
+    if torch.cuda.is_available():
+        devicetorch.set_device(torch, dist.get_rank() % torch.cuda.device_count())
     set_seed(1024)
     coordinator = DistCoordinator()
 
@@ -105,12 +110,16 @@ def main(args):
     model_name = model.__class__.__name__
     print(model_name)
     if model_name == "LlavaLlamaForCausalLM":
-        model = shard_former.optimize(model, policy=LlavaLlamaForCausalLMPolicy())[0].cuda()
+        #model = shard_former.optimize(model, policy=LlavaLlamaForCausalLMPolicy())[0].cuda()
+        model = shard_former.optimize(model, policy=LlavaLlamaForCausalLMPolicy())[0].to(device)
     elif model_name == "LlavaMistralForCausalLM":
-        model = shard_former.optimize(model, policy=LlavaMistralForCausalLMPolicy())[0].cuda()
+        #model = shard_former.optimize(model, policy=LlavaMistralForCausalLMPolicy())[0].cuda()
+        model = shard_former.optimize(model, policy=LlavaMistralForCausalLMPolicy())[0].to(device)
     else:
         print(f"The shardformer policy for {model_name} is not implemented, skip")
-    torch.cuda.empty_cache()
+
+    #torch.cuda.empty_cache()
+    devicetorch.empty_cache(torch)
 
     # ======================================================
     # 4. Prepare dataloader
@@ -225,7 +234,8 @@ def main(args):
     for i, batch in enumerate(pbar):
         # measure time
         if args.profile:
-            torch.cuda.synchronize()
+            devicetorch.synchronize(torch)
+            #torch.cuda.synchronize()
             start_time = time.time()
 
         video_files, frames, video_lengths, img_size_list, texts = batch
@@ -234,8 +244,10 @@ def main(args):
         with Timer() as encode_timer:
             samples = []
             for imgs, imgs_size, input_ids in zip(frames, img_size_list, texts):
-                imgs = imgs.cuda()
-                input_ids = input_ids.cuda()
+                #imgs = imgs.cuda()
+                imgs = imgs.to(device)
+                #input_ids = input_ids.cuda()
+                input_ids = input_ids.to(device)
                 _, _, _, _, inputs_embeds, _ = model.prepare_inputs_labels_for_multimodal(
                     input_ids, None, None, None, None, images=imgs, image_sizes=imgs_size
                 )
@@ -282,7 +294,8 @@ def main(args):
         # skip warmup and add profiling data
         if args.profile and i >= args.profile_warmup:
             # measure time
-            torch.cuda.synchronize()
+            #torch.cuda.synchronize()
+            devicetorch.synchronize(torch)
             time_taken = time.time() - start_time
 
             total_time.append(time_taken)

@@ -18,6 +18,7 @@ import spaces
 import torch
 
 import gradio as gr
+import devicetorch
 
 MODEL_TYPES = ["v1.2-stage3"]
 WATERMARK_PATH = "./assets/images/watermark/watermark.png"
@@ -26,6 +27,7 @@ CONFIG_MAP = {
 }
 HF_STDIT_MAP = {"v1.2-stage3": "hpcai-tech/OpenSora-STDiT-v3"}
 
+device = devicetorch.get(torch)
 
 # ============================
 # Prepare Runtime Environment
@@ -89,11 +91,11 @@ def build_models(model_type, config, enable_optimization=False):
     # build vae
     from opensora.registry import MODELS, build_module
 
-    vae = build_module(config.vae, MODELS).cuda()
+    vae = build_module(config.vae, MODELS).to(device)
 
     # build text encoder
     text_encoder = build_module(config.text_encoder, MODELS)  # T5 must be fp32
-    text_encoder.t5.model = text_encoder.t5.model.cuda()
+    text_encoder.t5.model = text_encoder.t5.model.to(device)
 
     # build stdit
     # we load model from HuggingFace directly so that we don't need to
@@ -101,7 +103,7 @@ def build_models(model_type, config, enable_optimization=False):
     from opensora.models.stdit.stdit3 import STDiT3
 
     stdit = STDiT3.from_pretrained(HF_STDIT_MAP[model_type])
-    stdit = stdit.cuda()
+    stdit = stdit.to(device)
 
     # build scheduler
     from opensora.registry import SCHEDULERS
@@ -117,7 +119,8 @@ def build_models(model_type, config, enable_optimization=False):
     stdit = stdit.to(torch.bfloat16).eval()
 
     # clear cuda
-    torch.cuda.empty_cache()
+    devicetorch.empty_cache(torch)
+    #torch.cuda.empty_cache()
     return vae, text_encoder, stdit, scheduler
 
 
@@ -151,8 +154,9 @@ def parse_args():
 # read config
 args = parse_args()
 config = read_config(CONFIG_MAP[args.model_type])
-torch.backends.cuda.matmul.allow_tf32 = True
-torch.backends.cudnn.allow_tf32 = True
+if device == "cuda":
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
 
 # make outputs dir
 os.makedirs(args.output, exist_ok=True)
@@ -189,7 +193,9 @@ from opensora.utils.misc import to_torch_dtype
 
 # some global variables
 dtype = to_torch_dtype(config.dtype)
-device = torch.device("cuda")
+
+#device = torch.device("cuda")
+device = devicetorch.get(device)
 
 # build model
 vae, text_encoder, stdit, scheduler = build_models(
@@ -377,7 +383,8 @@ def run_inference(
         timestamp = current_datetime.timestamp()
         save_path = os.path.join(args.output, f"output_{timestamp}")
         saved_path = save_sample(video, save_path=save_path, fps=24)
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
+        devicetorch.empty_cache(torch)
 
         # add watermark
         # all watermarked videos should have a _watermarked suffix

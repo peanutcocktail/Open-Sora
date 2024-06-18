@@ -11,6 +11,7 @@ from typing import Tuple
 import numpy as np
 import torch
 import torch.distributed as dist
+import devicetorch
 
 # ======================================================
 # Logging
@@ -369,12 +370,14 @@ class Timer:
         return self.end_time - self.start_time
 
     def __enter__(self):
-        torch.cuda.synchronize()
+        #torch.cuda.synchronize()
+        devicetorch.synchronize(torch)
         self.start_time = time.time()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        torch.cuda.synchronize()
+        #torch.cuda.synchronize()
+        devicetorch.synchronize(torch)
         self.end_time = time.time()
         if self.log:
             print(f"Elapsed time for {self.name}: {self.elapsed_time:.2f} s")

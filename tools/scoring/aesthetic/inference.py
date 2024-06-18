@@ -19,6 +19,7 @@ from torchvision.datasets.folder import pil_loader
 from tqdm import tqdm
 
 from tools.datasets.utils import extract_frames, is_video
+import devicetorch
 
 NUM_FRAMES_POINTS = {
     1: (0.5,),
@@ -143,10 +144,12 @@ def main():
         exit()
 
     dist.init_process_group(backend="nccl", timeout=timedelta(hours=24))
-    torch.cuda.set_device(dist.get_rank() % torch.cuda.device_count())
+    #torch.cuda.set_device(dist.get_rank() % torch.cuda.device_count())
+    devicetorch.set_device(torch, dist.get_rank() % devicetorch.device_count(torch))
 
     # build model
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    #device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = devicetorch.get(torch)
     model = AestheticScorer(768, device)
     model.mlp.load_state_dict(torch.load("pretrained_models/aesthetic.pth", map_location=device))
     preprocess = model.preprocess
@@ -200,7 +203,8 @@ def main():
     # wait for all ranks to finish data processing
     dist.barrier()
 
-    torch.cuda.empty_cache()
+    devicetorch.empty_cache(torch)
+    #torch.cuda.empty_cache()
     gc.collect()
     gathered_list = [None] * dist.get_world_size()
     dist.all_gather_object(gathered_list, (indices_list, scores_list))

@@ -16,6 +16,7 @@ from tasks.eval.model_utils import load_pllava
 from torch.utils.data import Dataset
 from tqdm import tqdm
 from transformers.feature_extraction_utils import BatchFeature
+import devicetorch
 
 conv_template = Conversation(
     system="Describe this video. Pay attention to all objects in the video. The description should be useful for AI to re-generate the video. The description should be no more than six sentences. Here are some examples of good descriptions: 1. A stylish woman walks down a Tokyo street filled with warm glowing neon and animated city signage. She wears a black leather jacket, a long red dress, and black boots, and carries a black purse. She wears sunglasses and red lipstick. She walks confidently and casually. The street is damp and reflective, creating a mirror effect of the colorful lights. Many pedestrians walk about. 2. Several giant wooly mammoths approach treading through a snowy meadow, their long wooly fur lightly blows in the wind as they walk, snow covered trees and dramatic snow capped mountains in the distance, mid afternoon light with wispy clouds and a sun high in the distance creates a warm glow, the low camera view is stunning capturing the large furry mammal with beautiful photography, depth of field. 3. Drone view of waves crashing against the rugged cliffs along Big Sur's garay point beach. The crashing blue waters create white-tipped waves, while the golden light of the setting sun illuminates the rocky shore. A small island with a lighthouse sits in the distance, and green shrubbery covers the cliff's edge. The steep drop from the road down to the beach is a dramatic feat, with the cliff’s edges jutting out over the sea. This is a view that captures the raw beauty of the coast and the rugged landscape of the Pacific Coast Highway.",
@@ -320,7 +321,8 @@ def main():
     args = parse_args()
     # csv_path = '/home/tom/PLLaVA/test_short_caption_part2.csv'
     if multiprocess:
-        n_gpus = torch.cuda.device_count()
+        #n_gpus = torch.cuda.device_count()
+        n_gpus = devicetorch.device_count(torch)
         world_size = n_gpus
         print(f"world_size: {world_size}")
         # Create a queue to collect results from each process

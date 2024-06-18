@@ -1,6 +1,7 @@
 import os
 
 import torch
+import devicetorch
 
 
 def get_world_size():
@@ -12,7 +13,8 @@ def get_world_size():
     elif os.environ.get("OMPI_COMM_WORLD_SIZE") is not None:
         return int(os.environ.get("OMPI_COMM_WORLD_SIZE") or 1)
     else:
-        return torch.cuda.device_count()
+        return devicetorch.device_count(torch)
+        #return torch.cuda.device_count()
 
 
 def get_global_rank():

@@ -177,7 +177,8 @@ class GaussianDiffusion:
         elif device == "cpu":
             device = torch.device("cpu")
         else:
-            raise ValueError(f"Unknown device: {device}")
+            device = torch.device(device)
+            #raise ValueError(f"Unknown device: {device}")
         self.device = device
         self.model_mean_type = model_mean_type
         self.model_var_type = model_var_type

@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 from tools.datasets.utils import extract_frames
 from tools.scoring.optical_flow.unimatch import UniMatch
+import devicetorch
 
 # torch.backends.cudnn.enabled = False # This line enables large batch, but the speed is similar
 
@@ -102,10 +103,12 @@ def main():
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     dist.init_process_group(backend="nccl", timeout=timedelta(hours=24))
-    torch.cuda.set_device(dist.get_rank() % torch.cuda.device_count())
+    #torch.cuda.set_device(dist.get_rank() % torch.cuda.device_count())
+    devicetorch.set_device(torch, dist.get_rank() % devicetorch.device_count(torch))
 
     # build model
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    #device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device = devicetorch.get(torch)
     model = UniMatch(
         feature_channels=128,
         num_scales=2,
@@ -179,7 +182,8 @@ def main():
     # wait for all ranks to finish data processing
     dist.barrier()
 
-    torch.cuda.empty_cache()
+    #torch.cuda.empty_cache()
+    devicetorch.empty_cache(torch)
     gc.collect()
     gathered_list = [None] * dist.get_world_size()
     dist.all_gather_object(gathered_list, (indices_list, scores_list))

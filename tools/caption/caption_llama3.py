@@ -17,6 +17,7 @@ os.system(f"cp {__file__} ~/backup/")  # optionally backup the script
 warnings.filterwarnings("ignore")
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from torch.distributed.elastic.multiprocessing.errors import record
+import devicetorch
 
 
 class CSVTextDataset(Dataset):
@@ -77,7 +78,9 @@ def main(args):
     # 1. init environment
     # ======================================================
     dist.init_process_group(backend="nccl", timeout=timedelta(hours=24))
-    torch.cuda.set_device(dist.get_rank() % torch.cuda.device_count())
+    #torch.cuda.set_device(dist.get_rank() % torch.cuda.device_count())
+    if torch.cuda.is_available():
+        devicetorch.set_device(torch, dist.get_rank() % torch.cuda.device_count())
 
     # ======================================================
     # 2. Prep rank-wise dataloader
@@ -127,7 +130,8 @@ def main(args):
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         torch_dtype=torch.bfloat16,
-        device_map=dist.get_rank() % torch.cuda.device_count(),
+        #device_map=dist.get_rank() % torch.cuda.device_count(),
+        device_map=dist.get_rank() % devicetorch.device_count(torch),
     )
     # .to(dist.get_rank() % torch.cuda.device_count())
     dist.barrier()

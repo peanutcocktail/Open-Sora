@@ -25,8 +25,11 @@ from timm.models.vision_transformer import Mlp
 
 from opensora.acceleration.communications import all_to_all, split_forward_gather_backward
 from opensora.acceleration.parallel_states import get_sequence_parallel_group
+import devicetorch
 
 approx_gelu = lambda: nn.GELU(approximate="tanh")
+
+device = devicetorch.get(torch)
 
 
 class LlamaRMSNorm(nn.Module):
@@ -649,7 +652,8 @@ class LabelEmbedder(nn.Module):
         Drops labels to enable classifier-free guidance.
         """
         if force_drop_ids is None:
-            drop_ids = torch.rand(labels.shape[0]).cuda() < self.dropout_prob
+            #drop_ids = torch.rand(labels.shape[0]).cuda() < self.dropout_prob
+            drop_ids = torch.rand(labels.shape[0]).to(device) < self.dropout_prob
         else:
             drop_ids = force_drop_ids == 1
         labels = torch.where(drop_ids, self.num_classes, labels)
@@ -728,7 +732,8 @@ class CaptionEmbedder(nn.Module):
         Drops labels to enable classifier-free guidance.
         """
         if force_drop_ids is None:
-            drop_ids = torch.rand(caption.shape[0]).cuda() < self.uncond_prob
+            #drop_ids = torch.rand(caption.shape[0]).cuda() < self.uncond_prob
+            drop_ids = torch.rand(caption.shape[0]).to(device) < self.uncond_prob
         else:
             drop_ids = force_drop_ids == 1
         caption = torch.where(drop_ids[:, None, None, None], self.y_embedding, caption)

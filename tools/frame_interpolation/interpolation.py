@@ -11,6 +11,7 @@ from opensora.utils.ckpt_utils import download_model
 
 from .networks.amt_g import Model
 from .utils.utils import InputPadder, img2tensor, tensor2img
+import devicetorch
 
 hf_endpoint = os.environ.get("HF_ENDPOINT")
 if hf_endpoint is None:
@@ -23,7 +24,8 @@ network_cfg = {
         "num_flows": 5,
     },
 }
-device = "cuda" if torch.cuda.is_available() else "cpu"
+#device = "cuda" if torch.cuda.is_available() else "cpu"
+device = devicetorch.get(torch)
 
 
 def init():
